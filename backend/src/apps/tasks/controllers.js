@@ -1,5 +1,4 @@
-import response from "../../utils/responses.js";
-import { paginatedResponse } from "../../utils/responses.js";
+import response, { paginatedResponse } from "../../utils/responses.js";
 import TaskModel from "./models.js";
 
 export const getTasks = async (req, res) => {
@@ -20,8 +19,14 @@ export const getTasks = async (req, res) => {
 
         const skip = (page - 1) * pageSize;
 
+        const query = TaskModel.find(filter).skip(skip).limit(pageSize);
+
+        if (!projectId) {
+            query.populate("fk_project", "name dueDate");
+        }
+
         const [tasks, totalItems] = await Promise.all([
-            TaskModel.find(filter).skip(skip).limit(pageSize),
+            query,
             TaskModel.countDocuments(filter),
         ]);
 
@@ -79,6 +84,70 @@ export const createATask = async (req, res) => {
             });
         }
 
+        return response(res, null, {
+            message: "Error interno del servidor",
+            error: true,
+            statusCode: 500,
+        });
+    }
+};
+
+export const editATask = async (req, res) => {
+    const { title, description, status, priority, dueDate } = req.body || {};
+
+    try {
+        const task = await TaskModel.findOneAndUpdate(
+            { _id: req.params.id, fk_user: req.user._id },
+            { title, description, status, priority, dueDate },
+            { returnDocument: "after", runValidators: true },
+        );
+
+        if (!task) {
+            return response(res, null, {
+                message: "Tarea no encontrada o no tienes permiso",
+                error: true,
+                statusCode: 404,
+            });
+        }
+
+        return response(res, task, {
+            message: "Tarea actualizada exitosamente",
+        });
+    } catch (err) {
+        if (err.name === "ValidationError") {
+            const fields = Object.values(err.errors).map((e) => e.path);
+            return response(res, null, {
+                message: `Campos inválidos: ${fields.join(", ")}`,
+                error: true,
+                statusCode: 400,
+            });
+        }
+
+        return response(res, null, {
+            message: "Error interno del servidor",
+            error: true,
+            statusCode: 500,
+        });
+    }
+};
+
+export const deleteATask = async (req, res) => {
+    try {
+        const task = await TaskModel.findOneAndDelete({
+            _id: req.params.id,
+            fk_user: req.user._id,
+        });
+
+        if (!task) {
+            return response(res, null, {
+                message: "Tarea no encontrada o no tienes permiso",
+                error: true,
+                statusCode: 404,
+            });
+        }
+
+        return response(res, null, { message: "Tarea eliminada exitosamente" });
+    } catch (err) {
         return response(res, null, {
             message: "Error interno del servidor",
             error: true,
