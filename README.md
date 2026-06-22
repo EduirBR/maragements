@@ -2,7 +2,7 @@
 
 App fullstack de gestión de proyectos y tareas con reportes y gráficos.
 
-Puedes verlo [Aqui](free-maragement.capymara.com)
+Puedes verlo [Aqui](http://free-maragement.capymara.com)
 
 ## Toma de deciciones
 
