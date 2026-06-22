@@ -1,4 +1,5 @@
 import axios from "axios";
+import toast from "react-hot-toast";
 import { URLBASE } from "./const";
 
 const requests = axios.create({
@@ -15,5 +16,25 @@ requests.interceptors.request.use((config) => {
     }
     return config;
 });
+
+requests.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        const status = error.response?.status;
+
+        if (status === 401) {
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("user");
+            toast.error("Sesión expirada. Redirigiendo al login...");
+            setTimeout(() => (window.location.href = "/login"), 1500);
+        }
+
+        if (status === 429) {
+            toast.error("Demasiadas solicitudes. Intenta de nuevo más tarde.");
+        }
+
+        return Promise.reject(error);
+    },
+);
 
 export default requests;

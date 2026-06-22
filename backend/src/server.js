@@ -3,6 +3,7 @@ import express from "express";
 import appRouter from "./routes.js";
 import { connectDB } from "./config/dbConfig.js";
 import { globalErrorHandler } from "./utils/errorHandler.js";
+import rateLimiter from "./middleware/rateLimiter.js";
 
 const runServer = async () => {
     const app = express();
@@ -11,6 +12,7 @@ const runServer = async () => {
     await connectDB();
     app.use(cors());
     app.use(express.json());
+    app.use(rateLimiter);
     app.use("/api", appRouter);
     app.get("/", (req, res) => res.json({ message: "Server is running okay" }));
     app.use(globalErrorHandler);

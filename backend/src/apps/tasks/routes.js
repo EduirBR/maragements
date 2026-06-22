@@ -1,5 +1,5 @@
 import express from "express";
-import { ROLES } from "../../constants.js";
+import { ROLES } from "../../config/const.js";
 import { authenticate, authorize } from "../../middleware/auth.js";
 import { validateId } from "../../middleware/validateId.js";
 import { getTasks, createATask, editATask, deleteATask } from "./controllers.js";

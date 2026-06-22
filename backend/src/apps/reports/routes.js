@@ -1,5 +1,5 @@
 import express from "express";
-import { ROLES } from "../../constants.js";
+import { ROLES } from "../../config/const.js";
 import { authenticate, authorize } from "../../middleware/auth.js";
 import {
     summary,
