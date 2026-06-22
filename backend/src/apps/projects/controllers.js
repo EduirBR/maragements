@@ -1,6 +1,7 @@
 import response from "../../utils/responses.js";
 import { AppError } from "../../utils/AppError.js";
 import ProjectModel from "./models.js";
+import TaskModel from "../tasks/models.js";
 
 export const createProject = async (req, res) => {
     const { name, description, dueDate } = req.body || {};
@@ -103,6 +104,8 @@ export const deleteProject = async (req, res) => {
             404,
         );
     }
+
+    await TaskModel.deleteMany({ fk_project: req.params.id });
 
     return response(res, null, {
         message: "Proyecto eliminado exitosamente",

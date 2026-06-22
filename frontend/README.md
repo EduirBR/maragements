@@ -1,16 +1,49 @@
-# React + Vite
+# Frontend — Free-Maragements
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + Vite 8 + TailwindCSS 4 + daisyUI 5.
 
-Currently, two official plugins are available:
+## Requisitos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node 23+
+- pnpm 10+
 
-## React Compiler
+## Variables de entorno
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```env
+VITE_BASEURL=http://localhost:8000   # opcional, default ""
+```
 
-## Expanding the ESLint configuration
+Sin `VITE_BASEURL` las llamadas van a `/api` (útil con el proxy de Vite o nginx).
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Local
+
+```bash
+pnpm install
+pnpm dev        # http://localhost:5173 (con proxy a :8000)
+pnpm build      # producción → dist/
+pnpm preview    # previsualiza el build
+```
+
+## Docker
+
+```bash
+docker build -t maragements-frontend \
+  --build-arg VITE_BASEURL=http://localhost:8000 \
+  .
+
+docker run -p 8080:80 maragements-frontend #8080 es el puerto a exponer
+```
+
+Si el backend está en otro puerto/host, cambia `VITE_BASEURL`. Sin el build arg, las llamadas van a `/api` y el nginx del contenedor debe proxy reversear al backend.
+
+## Rutas
+
+| Ruta            | Acceso  | Descripción                   |
+| --------------- | ------- | ----------------------------- |
+| `/`             | Público | Landing page                  |
+| `/login`        | Público | Inicio de sesión              |
+| `/register`     | Público | Registro                      |
+| `/dashboard`    | Privado | Dashboard con gráficos        |
+| `/projects`     | Privado | Lista de proyectos            |
+| `/projects/:id` | Privado | Detalle del proyecto + tareas |
+| `/tasks`        | Privado | Lista global de tareas        |

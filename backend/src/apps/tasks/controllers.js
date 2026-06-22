@@ -4,11 +4,12 @@ import TaskModel from "./models.js";
 
 export const getTasks = async (req, res) => {
     const filter = { fk_user: req.user._id };
-    const { projectId, status, priority } = req.query;
+    const { projectId, status, priority, ignore_status } = req.query;
 
     if (projectId) filter.fk_project = projectId;
     if (status) filter.status = status;
     if (priority) filter.priority = priority;
+    if (ignore_status) filter.status = { $ne: ignore_status };
 
     let page = parseInt(req.query.page) || 1;
     let pageSize = parseInt(req.query.pageSize) || 10;
@@ -19,7 +20,7 @@ export const getTasks = async (req, res) => {
 
     const skip = (page - 1) * pageSize;
 
-    const query = TaskModel.find(filter).skip(skip).limit(pageSize);
+    const query = TaskModel.find(filter).sort({ createdAt: -1 }).skip(skip).limit(pageSize);
 
     if (!projectId) {
         query.populate("fk_project", "name dueDate");

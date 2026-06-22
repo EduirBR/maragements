@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
 import {
     ListChecks,
     Filter,
-    CalendarDays,
-    FolderKanban,
     ChevronLeft,
     ChevronRight,
-    Flag,
+    Plus,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import NavBar from "../../components/NavBar";
+import TaskCard from "../../components/TaskCard";
 import * as taskService from "../../../services/taskService";
 import * as projectService from "../../../services/projectService";
 
@@ -28,20 +26,7 @@ const STATUSES = [
     { value: "completed", label: "Completada" },
 ];
 
-const priorityColor = {
-    low: "badge-info",
-    mid: "badge-warning",
-    high: "badge-error",
-};
-
-const statusColor = {
-    pending: "badge-ghost",
-    in_progress: "badge-info",
-    completed: "badge-success",
-};
-
 const TasksPage = () => {
-    const navigate = useNavigate();
     const [tasks, setTasks] = useState([]);
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -53,6 +38,8 @@ const TasksPage = () => {
         status: "",
         priority: "",
     });
+    const [taskForm, setTaskForm] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         projectService.getProjects().then(({ data: res }) => {
@@ -82,10 +69,58 @@ const TasksPage = () => {
 
     const totalPages = Math.ceil(totalItems / pageSize);
 
+    const loadTasks = async () => {
+        const params = { page, pageSize };
+        if (filters.projectId) params.projectId = filters.projectId;
+        if (filters.status) params.status = filters.status;
+        if (filters.priority) params.priority = filters.priority;
+        const { data: res } = await taskService.getTasks(params);
+        setTasks(res.data.items);
+        setTotalItems(res.data.total_items);
+    };
+
     const handleFilterChange = (key, value) => {
         setFilters((prev) => ({ ...prev, [key]: value }));
         setPage(1);
     };
+
+    const handleCreateTask = async (e) => {
+        e.preventDefault();
+        setSubmitting(true);
+        try {
+            const { data: res } = await taskService.createTask(taskForm);
+            toast.success(res.message);
+            setTaskForm(null);
+            await loadTasks();
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Error al crear tarea");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleEditTask = async (taskId, data) => {
+        try {
+            const { data: res } = await taskService.updateTask(taskId, data);
+            toast.success(res.message);
+            await loadTasks();
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Error al actualizar tarea");
+        }
+    };
+
+    const handleDeleteTask = async (taskId) => {
+        if (!confirm("¿Eliminar esta tarea?")) return;
+        try {
+            await taskService.deleteTask(taskId);
+            toast.success("Tarea eliminada");
+            await loadTasks();
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Error al eliminar tarea");
+        }
+    };
+
+    const today = new Date().toISOString().split("T")[0];
 
     return (
         <div className="min-h-screen bg-linear-to-br from-base-200 via-base-100 to-primary/5">
@@ -99,6 +134,21 @@ const TasksPage = () => {
                             {totalItems} tarea{totalItems !== 1 ? "s" : ""} en total
                         </p>
                     </div>
+                    <button
+                        onClick={() =>
+                            setTaskForm({
+                                title: "",
+                                description: "",
+                                priority: "mid",
+                                dueDate: "",
+                                fk_project: "",
+                            })
+                        }
+                        className="btn btn-primary btn-sm"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Nueva tarea
+                    </button>
                 </div>
 
                 <div className="card bg-base-100 shadow-md border border-base-200 mb-8">
@@ -183,75 +233,13 @@ const TasksPage = () => {
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-8">
                             {tasks.map((task) => (
-                                <div
+                                <TaskCard
                                     key={task._id}
-                                    className="card bg-base-100 shadow-sm border border-base-200 hover:shadow-md transition-shadow"
-                                >
-                                    <div className="card-body p-4">
-                                        <div className="flex items-start justify-between gap-2 mb-2">
-                                            <div className="min-w-0 flex-1">
-                                                <h3 className="font-semibold truncate">
-                                                    {task.title}
-                                                </h3>
-                                                {task.fk_project && (
-                                                    <button
-                                                        onClick={() =>
-                                                            navigate(
-                                                                `/projects/${task.fk_project._id || task.fk_project}`,
-                                                            )
-                                                        }
-                                                        className="text-xs text-primary hover:underline flex items-center gap-1 mt-0.5"
-                                                    >
-                                                        <FolderKanban className="w-3 h-3" />
-                                                        {task.fk_project.name ||
-                                                            task.fk_project}
-                                                    </button>
-                                                )}
-                                            </div>
-                                            <span
-                                                className={`badge badge-sm shrink-0 ${statusColor[task.status]}`}
-                                            >
-                                                {STATUSES.find(
-                                                    (s) =>
-                                                        s.value === task.status,
-                                                )?.label || task.status}
-                                            </span>
-                                        </div>
-
-                                        {task.description && (
-                                            <p className="text-sm text-base-content/60 line-clamp-2 mb-3">
-                                                {task.description}
-                                            </p>
-                                        )}
-
-                                        <div className="flex flex-wrap items-center gap-2 text-xs text-base-content/50">
-                                            <span
-                                                className={`badge badge-sm ${priorityColor[task.priority]}`}
-                                            >
-                                                <Flag className="w-3 h-3 mr-1" />
-                                                {PRIORITIES.find(
-                                                    (p) =>
-                                                        p.value ===
-                                                        task.priority,
-                                                )?.label || task.priority}
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <CalendarDays className="w-3 h-3" />
-                                                Creada:{" "}
-                                                {new Date(
-                                                    task.createdAt,
-                                                ).toLocaleDateString()}
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <CalendarDays className="w-3 h-3" />
-                                                Vence:{" "}
-                                                {new Date(
-                                                    task.dueDate,
-                                                ).toLocaleDateString()}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
+                                    task={task}
+                                    showProjectLink
+                                    onEdit={handleEditTask}
+                                    onDelete={handleDeleteTask}
+                                />
                             ))}
                         </div>
 
@@ -318,6 +306,169 @@ const TasksPage = () => {
                     </div>
                 )}
             </div>
+
+            {taskForm && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="card bg-base-100 shadow-xl w-full max-w-md">
+                        <div className="card-body p-6">
+                            <h3 className="text-xl font-bold mb-4">
+                                Nueva tarea
+                            </h3>
+                            <form
+                                onSubmit={handleCreateTask}
+                                className="flex flex-col gap-4"
+                            >
+                                <div>
+                                    <label className="label" htmlFor="task-title">
+                                        <span className="label-text font-medium">
+                                            Título
+                                        </span>
+                                    </label>
+                                    <input
+                                        id="task-title"
+                                        type="text"
+                                        placeholder="Título de la tarea"
+                                        className="input input-bordered w-full"
+                                        value={taskForm.title}
+                                        onChange={(e) =>
+                                            setTaskForm({
+                                                ...taskForm,
+                                                title: e.target.value,
+                                            })
+                                        }
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="label" htmlFor="task-desc">
+                                        <span className="label-text font-medium">
+                                            Descripción
+                                        </span>
+                                    </label>
+                                    <textarea
+                                        id="task-desc"
+                                        placeholder="Descripción de la tarea"
+                                        className="textarea textarea-bordered w-full"
+                                        rows={3}
+                                        value={taskForm.description}
+                                        onChange={(e) =>
+                                            setTaskForm({
+                                                ...taskForm,
+                                                description: e.target.value,
+                                            })
+                                        }
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="label" htmlFor="task-project">
+                                        <span className="label-text font-medium">
+                                            Proyecto
+                                        </span>
+                                    </label>
+                                    <select
+                                        id="task-project"
+                                        className="select select-bordered w-full"
+                                        value={taskForm.fk_project}
+                                        onChange={(e) =>
+                                            setTaskForm({
+                                                ...taskForm,
+                                                fk_project: e.target.value,
+                                            })
+                                        }
+                                        required
+                                    >
+                                        <option value="">
+                                            Selecciona un proyecto
+                                        </option>
+                                        {projects.map((p) => (
+                                            <option key={p._id} value={p._id}>
+                                                {p.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label
+                                            className="label"
+                                            htmlFor="task-priority"
+                                        >
+                                            <span className="label-text font-medium">
+                                                Prioridad
+                                            </span>
+                                        </label>
+                                        <select
+                                            id="task-priority"
+                                            className="select select-bordered w-full"
+                                            value={taskForm.priority}
+                                            onChange={(e) =>
+                                                setTaskForm({
+                                                    ...taskForm,
+                                                    priority: e.target.value,
+                                                })
+                                            }
+                                        >
+                                            <option value="low">Baja</option>
+                                            <option value="mid">Media</option>
+                                            <option value="high">Alta</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label
+                                            className="label"
+                                            htmlFor="task-due"
+                                        >
+                                            <span className="label-text font-medium">
+                                                Vence
+                                            </span>
+                                        </label>
+                                        <input
+                                            id="task-due"
+                                            type="date"
+                                            className="input input-bordered w-full"
+                                            value={taskForm.dueDate}
+                                            min={today}
+                                            onChange={(e) =>
+                                                setTaskForm({
+                                                    ...taskForm,
+                                                    dueDate: e.target.value,
+                                                })
+                                            }
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3 justify-end pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setTaskForm(null)}
+                                        className="btn btn-ghost"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="btn btn-primary"
+                                        disabled={submitting}
+                                    >
+                                        {submitting ? (
+                                            <span className="loading loading-spinner" />
+                                        ) : (
+                                            "Crear tarea"
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -23,10 +23,16 @@ requests.interceptors.response.use(
         const status = error.response?.status;
 
         if (status === 401) {
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("user");
-            toast.error("Sesión expirada. Redirigiendo al login...");
-            setTimeout(() => (window.location.href = "/login"), 1500);
+            const msg = error.response?.data?.message || "Sesión expirada";
+            const isAuthRoute =
+                error.config?.url?.includes("/auth/login") ||
+                error.config?.url?.includes("/auth/register");
+            if (!isAuthRoute) {
+                localStorage.removeItem("accessToken");
+                localStorage.removeItem("user");
+                setTimeout(() => (window.location.href = "/login"), 1500);
+            }
+            toast.error(msg);
         }
 
         if (status === 429) {

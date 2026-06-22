@@ -1,0 +1,234 @@
+{
+    "info": {
+        "name": "Free-Maragements API",
+        "description": "API de gestión de proyectos y tareas",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        { "key": "baseUrl", "value": "http://localhost:8000/api" },
+        { "key": "token", "value": "" }
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+    },
+    "item": [
+        {
+            "name": "Auth",
+            "item": [
+                {
+                    "name": "Registro",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{baseUrl}}/auth/register",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Usuario Ejemplo\",\n    \"email\": \"user@example.com\",\n    \"password\": \"123456\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Login",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{baseUrl}}/auth/login",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"123456\"\n}"
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var json = pm.response.json();",
+                                    "if (json.data && json.data.accessToken) {",
+                                    "    pm.collectionVariables.set('token', json.data.accessToken);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Perfil",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/auth/me"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Proyectos",
+            "item": [
+                {
+                    "name": "Listar proyectos",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/projects?search=&dueDate=",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["projects"],
+                            "query": [
+                                { "key": "search", "value": "", "description": "Filtrar por nombre" },
+                                { "key": "dueDate", "value": "", "description": "Filtrar por fecha límite (YYYY-MM-DD)" }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Crear proyecto",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{baseUrl}}/projects",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Mi Proyecto\",\n    \"description\": \"Descripción del proyecto\",\n    \"dueDate\": \"2026-12-31\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Detalle proyecto",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/projects/:id",
+                        "variable": [{ "key": "id", "value": "" }]
+                    }
+                },
+                {
+                    "name": "Editar proyecto",
+                    "request": {
+                        "method": "PUT",
+                        "url": "{{baseUrl}}/projects/:id",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "variable": [{ "key": "id", "value": "" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Proyecto actualizado\",\n    \"description\": \"Nueva descripción\",\n    \"dueDate\": \"2026-12-31\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Eliminar proyecto",
+                    "request": {
+                        "method": "DELETE",
+                        "url": "{{baseUrl}}/projects/:id",
+                        "variable": [{ "key": "id", "value": "" }]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Tareas",
+            "item": [
+                {
+                    "name": "Listar tareas",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/tasks?page=1&pageSize=10&projectId=&status=&priority=",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["tasks"],
+                            "query": [
+                                { "key": "page", "value": "1" },
+                                { "key": "pageSize", "value": "10" },
+                                { "key": "projectId", "value": "", "description": "Filtrar por proyecto" },
+                                { "key": "status", "value": "", "description": "pending | in_progress | completed" },
+                                { "key": "priority", "value": "", "description": "low | mid | high" },
+                                { "key": "ignore_status", "value": "", "description": "Excluir un estado (usado para 'no completadas')" }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Crear tarea",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{baseUrl}}/tasks",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"Mi tarea\",\n    \"description\": \"Descripción de la tarea\",\n    \"status\": \"pending\",\n    \"priority\": \"mid\",\n    \"dueDate\": \"2026-12-31\",\n    \"fk_project\": \"ID_DEL_PROYECTO\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Editar tarea",
+                    "request": {
+                        "method": "PUT",
+                        "url": "{{baseUrl}}/tasks/:id",
+                        "header": [{ "key": "Content-Type", "value": "application/json" }],
+                        "variable": [{ "key": "id", "value": "" }],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"status\": \"completed\",\n    \"priority\": \"high\",\n    \"dueDate\": \"2026-12-31\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Eliminar tarea",
+                    "request": {
+                        "method": "DELETE",
+                        "url": "{{baseUrl}}/tasks/:id",
+                        "variable": [{ "key": "id", "value": "" }]
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Reportes",
+            "item": [
+                {
+                    "name": "Resumen general",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/reports/summary"
+                    }
+                },
+                {
+                    "name": "Proyectos con más tareas pendientes",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/reports/projects-most-pending"
+                    }
+                },
+                {
+                    "name": "Tareas completadas",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/reports/completed-tasks?period=week",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["reports", "completed-tasks"],
+                            "query": [{ "key": "period", "value": "week", "description": "day | week | month" }]
+                        }
+                    }
+                },
+                {
+                    "name": "Tareas por estado",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/reports/tasks-by-status"
+                    }
+                },
+                {
+                    "name": "Productividad por día",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/reports/productivity-by-day?period=month",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["reports", "productivity-by-day"],
+                            "query": [{ "key": "period", "value": "month", "description": "day | week | month" }]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

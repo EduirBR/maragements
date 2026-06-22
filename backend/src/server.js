@@ -10,6 +10,7 @@ const runServer = async () => {
     const PORT = process.env.PORT || 8000;
 
     await connectDB();
+    app.set("trust proxy", 1);
     app.use(cors());
     app.use(express.json());
     app.use(rateLimiter);

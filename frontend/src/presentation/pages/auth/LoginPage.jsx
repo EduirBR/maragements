@@ -23,8 +23,8 @@ const LoginPage = () => {
         try {
             await login({ email, password });
             navigate("/dashboard");
-        } catch (err) {
-            toast.error(err.message);
+        } catch {
+            // el interceptor ya muestra el toast
         } finally {
             setSubmitting(false);
         }

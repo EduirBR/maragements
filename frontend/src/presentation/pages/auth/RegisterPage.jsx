@@ -32,8 +32,8 @@ const RegisterPage = () => {
         try {
             await register({ name, email, password, repeatPassword });
             navigate("/dashboard");
-        } catch (err) {
-            toast.error(err.message);
+        } catch {
+            // el interceptor ya muestra el toast
         } finally {
             setSubmitting(false);
         }

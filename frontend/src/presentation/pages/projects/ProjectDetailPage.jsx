@@ -8,24 +8,12 @@ import {
     Plus,
     ArrowLeft,
     AlertTriangle,
-    Flag,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import NavBar from "../../components/NavBar";
+import TaskCard from "../../components/TaskCard";
 import * as projectService from "../../../services/projectService";
 import * as taskService from "../../../services/taskService";
-
-const priorityIcon = {
-    low: Flag,
-    mid: Flag,
-    high: Flag,
-};
-
-const priorityColor = {
-    low: "badge-info",
-    mid: "badge-warning",
-    high: "badge-error",
-};
 
 const statusColor = {
     pending: "badge-soft",
@@ -54,20 +42,32 @@ const ProjectDetailPage = () => {
     const [editForm, setEditForm] = useState(null);
     const [taskForm, setTaskForm] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+    const [statusFilter, setStatusFilter] = useState("all");
+    const [priorityFilter, setPriorityFilter] = useState("all");
 
     const loadTasks = useCallback(async () => {
         try {
-            const { data: res } = await taskService.getTasks({
-                projectId: id,
-                pageSize: 100,
-            });
+            const params = { projectId: id, pageSize: 100 };
+            if (
+                statusFilter === "pending" ||
+                statusFilter === "in_progress" ||
+                statusFilter === "completed"
+            ) {
+                params.status = statusFilter;
+            } else if (statusFilter === "not_completed") {
+                params.ignore_status = "completed";
+            }
+            if (priorityFilter === "low" || priorityFilter === "mid" || priorityFilter === "high") {
+                params.priority = priorityFilter;
+            }
+            const { data: res } = await taskService.getTasks(params);
             setTasks(res.data.items);
         } catch (err) {
             toast.error(
                 err.response?.data?.message || "Error al cargar tareas",
             );
         }
-    }, [id]);
+    }, [id, statusFilter, priorityFilter]);
 
     useEffect(() => {
         (async () => {
@@ -173,8 +173,30 @@ const ProjectDetailPage = () => {
 
     if (!project) return null;
 
+    const statusFilters = [
+        { value: "all", label: "Todas" },
+        { value: "pending", label: "Pendientes" },
+        { value: "in_progress", label: "En progreso" },
+        { value: "completed", label: "Completadas" },
+        { value: "not_completed", label: "No completadas" },
+    ];
+
+    const priorityFilters = [
+        { value: "all", label: "Todas" },
+        { value: "low", label: "Baja" },
+        { value: "mid", label: "Media" },
+        { value: "high", label: "Alta" },
+    ];
+
+    const filteredTasks =
+        statusFilter === "all"
+            ? tasks
+            : statusFilter === "not_completed"
+              ? tasks.filter((t) => t.status !== "completed")
+              : tasks.filter((t) => t.status === statusFilter);
+
     const groupedTasks = {
-        pending: tasks.filter((t) => t.status === "pending"),
+        pending: filteredTasks.filter((t) => t.status === "pending"),
         in_progress: tasks.filter((t) => t.status === "in_progress"),
         completed: tasks.filter((t) => t.status === "completed"),
     };
@@ -251,7 +273,7 @@ const ProjectDetailPage = () => {
                     </div>
                 </div>
 
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                     <h2 className="text-xl font-semibold">Tareas</h2>
                     <button
                         onClick={() =>
@@ -269,7 +291,42 @@ const ProjectDetailPage = () => {
                     </button>
                 </div>
 
-                {tasks.length > 0 ? (
+                <div className="flex flex-wrap gap-2 mb-6">
+                    {statusFilters.map((f) => (
+                        <button
+                            key={f.value}
+                            onClick={() => setStatusFilter(f.value)}
+                            className={`btn btn-sm ${
+                                statusFilter === f.value
+                                    ? "btn-primary"
+                                    : "btn-ghost"
+                            }`}
+                        >
+                            {f.label}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-6">
+                    <span className="text-sm font-medium text-base-content/60 self-center mr-1">
+                        Prioridad:
+                    </span>
+                    {priorityFilters.map((f) => (
+                        <button
+                            key={f.value}
+                            onClick={() => setPriorityFilter(f.value)}
+                            className={`btn btn-sm ${
+                                priorityFilter === f.value
+                                    ? "btn-primary"
+                                    : "btn-ghost"
+                            }`}
+                        >
+                            {f.label}
+                        </button>
+                    ))}
+                </div>
+
+                {filteredTasks.length > 0 ? (
                     <div className="flex flex-col gap-8">
                         {["pending", "in_progress", "completed"].map(
                             (status) => {
@@ -571,130 +628,6 @@ const ProjectDetailPage = () => {
                     </div>
                 </div>
             )}
-        </div>
-    );
-};
-
-const TaskCard = ({ task, onEdit, onDelete }) => {
-    const [editing, setEditing] = useState(false);
-    const [status, setStatus] = useState(task.status);
-    const [priority, setPriority] = useState(task.priority);
-    const [dueDate, setDueDate] = useState(
-        task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "",
-    );
-
-    const PriorityIcon = priorityIcon[priority] || Flag;
-
-    const saveChanges = (changes) => {
-        onEdit(task._id, { status, priority, dueDate, ...changes });
-    };
-
-    const today = new Date().toISOString().split("T")[0];
-
-    return (
-        <div className="card bg-base-100 shadow-sm border border-base-200 hover:shadow-md transition-shadow">
-            <div className="card-body p-4">
-                <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                        <h4 className="font-medium truncate">{task.title}</h4>
-                        {task.description && (
-                            <p className="text-sm text-base-content/60 mt-1 line-clamp-2">
-                                {task.description}
-                            </p>
-                        )}
-                    </div>
-                    <div className="flex gap-1 shrink-0">
-                        <button
-                            onClick={() => setEditing(!editing)}
-                            className="btn btn-ghost btn-xs"
-                        >
-                            <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                            onClick={() => onDelete(task._id)}
-                            className="btn btn-ghost btn-xs text-error"
-                        >
-                            <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                    </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-base-content/50">
-                    <span className="flex items-center gap-1">
-                        Creado: {new Date(task.createdAt).toLocaleDateString()}
-                    </span>
-                    <span className="flex items-center gap-1">
-                        <CalendarDays className="w-3 h-3" />
-                        Vence: {new Date(task.dueDate).toLocaleDateString()}
-                    </span>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <span
-                        className={`badge badge-sm ${priorityColor[priority]}`}
-                    >
-                        <PriorityIcon className="w-3 h-3 mr-1" />
-                        {PRIORITIES.find((p) => p.value === priority)?.label ||
-                            priority}
-                    </span>
-                    <span className={`badge badge-sm ${statusColor[status]}`}>
-                        {STATUSES.find((s) => s.value === status)?.label ||
-                            status}
-                    </span>
-                </div>
-
-                {editing && (
-                    <div className="mt-3 pt-3 border-t border-base-200 flex flex-col gap-2">
-                        <div className="grid grid-cols-2 gap-2">
-                            <select
-                                className="select select-bordered select-xs"
-                                value={status}
-                                onChange={(e) => {
-                                    setStatus(e.target.value);
-                                    saveChanges({ status: e.target.value });
-                                }}
-                            >
-                                {STATUSES.map((s) => (
-                                    <option key={s.value} value={s.value}>
-                                        {s.label}
-                                    </option>
-                                ))}
-                            </select>
-                            <select
-                                className="select select-bordered select-xs"
-                                value={priority}
-                                onChange={(e) => {
-                                    setPriority(e.target.value);
-                                    saveChanges({ priority: e.target.value });
-                                }}
-                            >
-                                {PRIORITIES.map((p) => (
-                                    <option key={p.value} value={p.value}>
-                                        {p.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="label py-1">
-                                <span className="label-text text-xs">
-                                    Fecha de vencimiento
-                                </span>
-                            </label>
-                            <input
-                                type="date"
-                                className="input input-bordered input-xs w-full"
-                                value={dueDate}
-                                min={today}
-                                onChange={(e) => {
-                                    setDueDate(e.target.value);
-                                    saveChanges({ dueDate: e.target.value });
-                                }}
-                            />
-                        </div>
-                    </div>
-                )}
-            </div>
         </div>
     );
 };
