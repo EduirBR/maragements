@@ -1,12 +1,12 @@
 const response = (
     res,
     data,
-    { message = "no message", error = false, statusCode = 200 },
+    { message = "no message", error = false, statusCode = 200 } = {},
 ) => {
     if (error && statusCode >= 200 && statusCode < 300) {
         statusCode = 400;
     }
-    if (statusCode < 200 && statusCode >= 300) {
+    if (statusCode < 200 || statusCode >= 300) {
         error = true;
     }
     res.status(statusCode).json({

@@ -1,5 +1,6 @@
 import response from "../../utils/responses.js";
 import { generateToken } from "../../utils/jwt.js";
+import { AppError } from "../../utils/AppError.js";
 import UserModel from "./models.js";
 
 export const registerHandler = async (req, res) => {
@@ -12,67 +13,34 @@ export const registerHandler = async (req, res) => {
     if (!repeat_password) missing.push("repeat_password");
 
     if (missing.length > 0) {
-        return response(res, null, {
-            message: `Faltan los siguientes campos requeridos: ${missing.join(", ")}`,
-            error: true,
-        });
+        throw new AppError(
+            `Faltan los siguientes campos requeridos: ${missing.join(", ")}`,
+            400,
+        );
     }
 
     if (password !== repeat_password) {
-        return response(res, null, {
-            message: "Las contraseñas no coinciden",
-            error: true,
-        });
+        throw new AppError("Las contraseñas no coinciden", 400);
     }
 
+    const newUser = await UserModel.create({ name, email, password });
+
+    let accessToken;
     try {
-        const newUser = await UserModel.create({ name, email, password });
-
-        let accessToken;
-        try {
-            accessToken = generateToken({ id: newUser._id });
-        } catch (err) {
-            console.log(err);
-            await UserModel.findByIdAndDelete(newUser._id);
-            return response(res, null, {
-                message: "Error al generar el token de autenticación",
-                error: true,
-                statusCode: 500,
-            });
-        }
-
-        const user = newUser.toObject();
-        delete user.password;
-
-        return response(
-            res,
-            { user, accessToken },
-            { message: "Usuario registrado exitosamente" },
-        );
+        accessToken = generateToken({ id: newUser._id, role: newUser.role });
     } catch (err) {
-        if (err.name === "ValidationError") {
-            const fields = Object.values(err.errors).map((e) => e.path);
-            return response(res, null, {
-                message: `Campos inválidos: ${fields.join(", ")}`,
-                error: true,
-                statusCode: 400,
-            });
-        }
-
-        if (err.code === 11000) {
-            return response(res, null, {
-                message: "El email ya está registrado",
-                error: true,
-                statusCode: 409,
-            });
-        }
-        console.log(err);
-        return response(res, null, {
-            message: "Error interno del servidor",
-            error: true,
-            statusCode: 500,
-        });
+        await UserModel.findByIdAndDelete(newUser._id);
+        throw new AppError("Error al generar el token de autenticación", 500);
     }
+
+    const user = newUser.toObject();
+    delete user.password;
+
+    return response(
+        res,
+        { user, accessToken },
+        { message: "Usuario registrado exitosamente" },
+    );
 };
 
 export const loginHandler = async (req, res) => {
@@ -83,44 +51,30 @@ export const loginHandler = async (req, res) => {
     if (!password) missing.push("password");
 
     if (missing.length > 0) {
-        return response(res, null, {
-            message: `Faltan los siguientes campos requeridos: ${missing.join(", ")}`,
-            error: true,
-        });
-    }
-
-    try {
-        const userFound = await UserModel.findOne({ email });
-        if (!userFound) {
-            return response(res, null, {
-                message: "Credenciales inválidas",
-                statusCode: 401,
-            });
-        }
-
-        const isMatch = await userFound.comparePassword(password);
-        if (!isMatch) {
-            return response(res, null, {
-                message: "Credenciales inválidas",
-                statusCode: 401,
-            });
-        }
-
-        const accessToken = generateToken({ id: userFound._id });
-
-        const user = userFound.toObject();
-        delete user.password;
-
-        return response(
-            res,
-            { accessToken },
-            { message: "Inicio de sesión exitoso" },
+        throw new AppError(
+            `Faltan los siguientes campos requeridos: ${missing.join(", ")}`,
+            400,
         );
-    } catch (err) {
-        return response(res, null, {
-            message: "Error interno del servidor",
-            error: true,
-            statusCode: 500,
-        });
     }
+
+    const userFound = await UserModel.findOne({ email });
+    if (!userFound) throw new AppError("Credenciales inválidas", 401);
+
+    const isMatch = await userFound.comparePassword(password);
+    if (!isMatch) throw new AppError("Credenciales inválidas", 401);
+
+    const accessToken = generateToken({ id: userFound._id, role: userFound.role });
+
+    const user = userFound.toObject();
+    delete user.password;
+
+    return response(
+        res,
+        { user, accessToken },
+        { message: "Inicio de sesión exitoso" },
+    );
+};
+
+export const meHandler = async (req, res) => {
+    return response(res, { user: req.user }, { message: "Perfil obtenido" });
 };

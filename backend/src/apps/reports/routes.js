@@ -5,6 +5,8 @@ import {
     summary,
     projectsWithMostPendingTasks,
     tasksCompletedByPeriod,
+    tasksByStatus,
+    productivityByDay,
 } from "./controllers.js";
 
 const router = express.Router();
@@ -21,6 +23,16 @@ router.get(
     "/completed-tasks",
     authorize(ROLES.USER, ROLES.ADMIN),
     tasksCompletedByPeriod,
+);
+router.get(
+    "/tasks-by-status",
+    authorize(ROLES.USER, ROLES.ADMIN),
+    tasksByStatus,
+);
+router.get(
+    "/productivity-by-day",
+    authorize(ROLES.USER, ROLES.ADMIN),
+    productivityByDay,
 );
 
 export default router;
