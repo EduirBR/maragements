@@ -88,7 +88,7 @@ const TasksPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-primary/5">
+        <div className="min-h-screen bg-linear-to-br from-base-200 via-base-100 to-primary/5">
             <NavBar />
 
             <div className="container mx-auto px-4 py-8">

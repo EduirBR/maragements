@@ -58,7 +58,7 @@ const LoginPage = () => {
                                 </p>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="space-y-5">
+                            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                                 <div>
                                     <label className="label" htmlFor="email">
                                         <span className="label-text font-medium">

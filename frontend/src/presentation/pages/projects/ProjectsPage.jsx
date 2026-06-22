@@ -200,7 +200,7 @@ const ProjectsPage = () => {
                             <h3 className="text-xl font-bold mb-4">
                                 Nuevo proyecto
                             </h3>
-                            <form onSubmit={handleCreate} className="space-y-4">
+                            <form onSubmit={handleCreate} className="flex flex-col gap-4">
                                 <div>
                                     <label className="label" htmlFor="name">
                                         <span className="label-text font-medium">

@@ -42,21 +42,27 @@ const Dashboard = () => {
                 const sumRes = await reportService.getSummary();
                 setSummary(sumRes.data.data);
             } catch (err) {
-                toast.error(err.response?.data?.message || "Error al cargar resumen");
+                toast.error(
+                    err.response?.data?.message || "Error al cargar resumen",
+                );
             }
 
             try {
                 const pendRes = await reportService.getProjectsMostPending();
                 setPendingProjects(pendRes.data.data);
             } catch (err) {
-                toast.error(err.response?.data?.message || "Error al cargar proyectos");
+                toast.error(
+                    err.response?.data?.message || "Error al cargar proyectos",
+                );
             }
 
             try {
                 const tasksRes = await reportService.getCompletedTasks(period);
                 setCompletedTasks(tasksRes.data.data.tasks);
             } catch (err) {
-                toast.error(err.response?.data?.message || "Error al cargar tareas");
+                toast.error(
+                    err.response?.data?.message || "Error al cargar tareas",
+                );
             }
 
             try {
@@ -73,7 +79,10 @@ const Dashboard = () => {
             }
 
             try {
-                const prodRes = await reportService.getProductivityByDay(productivityPeriod);
+                const prodRes =
+                    await reportService.getProductivityByDay(
+                        productivityPeriod,
+                    );
                 setProductivity(prodRes.data.data);
             } catch {
                 // not critical
@@ -117,7 +126,7 @@ const Dashboard = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-primary/5">
+        <div className="min-h-screen bg-linear-to-br from-base-200 via-base-100 to-primary/5">
             <NavBar />
 
             <div className="container mx-auto px-4 py-8">
@@ -169,7 +178,9 @@ const Dashboard = () => {
                                             <tr>
                                                 <th>#</th>
                                                 <th>Proyecto</th>
-                                                <th className="text-right">Pendientes</th>
+                                                <th className="text-right">
+                                                    Pendientes
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -192,8 +203,12 @@ const Dashboard = () => {
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-12 text-base-content/40">
                                     <AlertTriangle className="w-12 h-12 mb-3" />
-                                    <p className="text-lg font-medium">Sin tareas pendientes</p>
-                                    <p className="text-sm">No hay proyectos con tareas pendientes</p>
+                                    <p className="text-lg font-medium">
+                                        Sin tareas pendientes
+                                    </p>
+                                    <p className="text-sm">
+                                        No hay proyectos con tareas pendientes
+                                    </p>
                                 </div>
                             )}
                         </div>
@@ -204,7 +219,9 @@ const Dashboard = () => {
                             <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                                 <div className="flex items-center gap-2">
                                     <CalendarDays className="w-5 h-5 text-primary" />
-                                    <h2 className="text-xl font-semibold">Tareas completadas</h2>
+                                    <h2 className="text-xl font-semibold">
+                                        Tareas completadas
+                                    </h2>
                                 </div>
 
                                 <div className="flex gap-1 bg-base-200 rounded-lg p-1">
@@ -225,14 +242,16 @@ const Dashboard = () => {
                             </div>
 
                             {completedTasks.length > 0 ? (
-                                <div className="space-y-3">
+                                <div className="flex flex-col gap-3">
                                     {completedTasks.map((task) => (
                                         <div
                                             key={task._id}
                                             className="flex items-center justify-between p-3 bg-base-200/50 rounded-lg"
                                         >
                                             <div className="min-w-0 flex-1">
-                                                <p className="font-medium truncate">{task.title}</p>
+                                                <p className="font-medium truncate">
+                                                    {task.title}
+                                                </p>
                                                 {task.fk_project && (
                                                     <p className="text-sm text-base-content/50 truncate">
                                                         {task.fk_project.name}
@@ -248,8 +267,13 @@ const Dashboard = () => {
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-12 text-base-content/40">
                                     <CheckCircle2 className="w-12 h-12 mb-3" />
-                                    <p className="text-lg font-medium">Sin tareas completadas</p>
-                                    <p className="text-sm">No hay tareas completadas en este período</p>
+                                    <p className="text-lg font-medium">
+                                        Sin tareas completadas
+                                    </p>
+                                    <p className="text-sm">
+                                        No hay tareas completadas en este
+                                        período
+                                    </p>
                                 </div>
                             )}
                         </div>

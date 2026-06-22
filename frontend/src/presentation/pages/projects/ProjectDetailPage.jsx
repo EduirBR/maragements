@@ -28,7 +28,7 @@ const priorityColor = {
 };
 
 const statusColor = {
-    pending: "badge-ghost",
+    pending: "badge-soft",
     in_progress: "badge-info",
     completed: "badge-success",
 };
@@ -57,10 +57,15 @@ const ProjectDetailPage = () => {
 
     const loadTasks = useCallback(async () => {
         try {
-            const { data: res } = await taskService.getTasks({ projectId: id, pageSize: 100 });
+            const { data: res } = await taskService.getTasks({
+                projectId: id,
+                pageSize: 100,
+            });
             setTasks(res.data.items);
         } catch (err) {
-            toast.error(err.response?.data?.message || "Error al cargar tareas");
+            toast.error(
+                err.response?.data?.message || "Error al cargar tareas",
+            );
         }
     }, [id]);
 
@@ -71,7 +76,9 @@ const ProjectDetailPage = () => {
                 setProject(res.data);
                 await loadTasks();
             } catch (err) {
-                toast.error(err.response?.data?.message || "Error al cargar datos");
+                toast.error(
+                    err.response?.data?.message || "Error al cargar datos",
+                );
                 navigate("/projects");
             } finally {
                 setLoading(false);
@@ -83,7 +90,10 @@ const ProjectDetailPage = () => {
         e.preventDefault();
         setSubmitting(true);
         try {
-            const { data: res } = await projectService.updateProject(id, editForm);
+            const { data: res } = await projectService.updateProject(
+                id,
+                editForm,
+            );
             toast.success(res.message);
             setProject(res.data);
             setEditForm(null);
@@ -129,7 +139,9 @@ const ProjectDetailPage = () => {
             toast.success(res.message);
             loadTasks();
         } catch (err) {
-            toast.error(err.response?.data?.message || "Error al actualizar tarea");
+            toast.error(
+                err.response?.data?.message || "Error al actualizar tarea",
+            );
         }
     };
 
@@ -140,7 +152,9 @@ const ProjectDetailPage = () => {
             toast.success("Tarea eliminada");
             loadTasks();
         } catch (err) {
-            toast.error(err.response?.data?.message || "Error al eliminar tarea");
+            toast.error(
+                err.response?.data?.message || "Error al eliminar tarea",
+            );
         }
     };
 
@@ -166,7 +180,7 @@ const ProjectDetailPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-primary/5">
+        <div className="min-h-screen bg-linear-to-br from-base-200 via-base-100 to-primary/5">
             <NavBar />
 
             <div className="container mx-auto px-4 py-8">
@@ -256,7 +270,7 @@ const ProjectDetailPage = () => {
                 </div>
 
                 {tasks.length > 0 ? (
-                    <div className="space-y-8">
+                    <div className="flex flex-col gap-8">
                         {["pending", "in_progress", "completed"].map(
                             (status) => {
                                 const items = groupedTasks[status];
@@ -274,9 +288,11 @@ const ProjectDetailPage = () => {
                                                           : "bg-success"
                                                 }`}
                                             />
-                                            {STATUSES.find(
-                                                (s) => s.value === status,
-                                            ).label}{" "}
+                                            {
+                                                STATUSES.find(
+                                                    (s) => s.value === status,
+                                                ).label
+                                            }{" "}
                                             ({items.length})
                                         </h3>
 
@@ -298,9 +314,7 @@ const ProjectDetailPage = () => {
                 ) : (
                     <div className="flex flex-col items-center justify-center py-16 text-base-content/40">
                         <AlertTriangle className="w-12 h-12 mb-3" />
-                        <p className="text-lg font-medium">
-                            Sin tareas
-                        </p>
+                        <p className="text-lg font-medium">Sin tareas</p>
                         <p className="text-sm">
                             Crea la primera tarea para este proyecto
                         </p>
@@ -317,10 +331,13 @@ const ProjectDetailPage = () => {
                             </h3>
                             <form
                                 onSubmit={handleEditProject}
-                                className="space-y-4"
+                                className="flex flex-col gap-4"
                             >
                                 <div>
-                                    <label className="label" htmlFor="edit-name">
+                                    <label
+                                        className="label"
+                                        htmlFor="edit-name"
+                                    >
                                         <span className="label-text font-medium">
                                             Nombre
                                         </span>
@@ -341,7 +358,10 @@ const ProjectDetailPage = () => {
                                 </div>
 
                                 <div>
-                                    <label className="label" htmlFor="edit-desc">
+                                    <label
+                                        className="label"
+                                        htmlFor="edit-desc"
+                                    >
                                         <span className="label-text font-medium">
                                             Descripción
                                         </span>
@@ -361,10 +381,7 @@ const ProjectDetailPage = () => {
                                 </div>
 
                                 <div>
-                                    <label
-                                        className="label"
-                                        htmlFor="edit-due"
-                                    >
+                                    <label className="label" htmlFor="edit-due">
                                         <span className="label-text font-medium">
                                             Fecha límite
                                         </span>
@@ -419,10 +436,13 @@ const ProjectDetailPage = () => {
                             </h3>
                             <form
                                 onSubmit={handleCreateTask}
-                                className="space-y-4"
+                                className="flex flex-col gap-4"
                             >
                                 <div>
-                                    <label className="label" htmlFor="task-title">
+                                    <label
+                                        className="label"
+                                        htmlFor="task-title"
+                                    >
                                         <span className="label-text font-medium">
                                             Título
                                         </span>
@@ -610,7 +630,9 @@ const TaskCard = ({ task, onEdit, onDelete }) => {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <span className={`badge badge-sm ${priorityColor[priority]}`}>
+                    <span
+                        className={`badge badge-sm ${priorityColor[priority]}`}
+                    >
                         <PriorityIcon className="w-3 h-3 mr-1" />
                         {PRIORITIES.find((p) => p.value === priority)?.label ||
                             priority}
@@ -622,7 +644,7 @@ const TaskCard = ({ task, onEdit, onDelete }) => {
                 </div>
 
                 {editing && (
-                    <div className="mt-3 space-y-2 pt-3 border-t border-base-200">
+                    <div className="mt-3 pt-3 border-t border-base-200 flex flex-col gap-2">
                         <div className="grid grid-cols-2 gap-2">
                             <select
                                 className="select select-bordered select-xs"
