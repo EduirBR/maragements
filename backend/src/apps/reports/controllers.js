@@ -31,6 +31,7 @@ export const projectsWithMostPendingTasks = async (req, res) => {
         { $match: { fk_user: userId, status: "pending" } },
         { $group: { _id: "$fk_project", pendingTasks: { $sum: 1 } } },
         { $sort: { pendingTasks: -1 } },
+        { $limit: 5 },
         {
             $lookup: {
                 from: "projects",

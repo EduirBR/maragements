@@ -39,7 +39,7 @@ export const getProjects = async (req, res) => {
         filter.dueDate = { $gte: start, $lt: end };
     }
 
-    const query = ProjectModel.find(filter);
+    const query = ProjectModel.find(filter).sort({ createdAt: -1 });
 
     if (req.user.role === "admin") {
         query.populate("fk_user", "name email");
