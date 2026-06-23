@@ -1,6 +1,7 @@
 import response, { paginatedResponse } from "../../utils/responses.js";
 import { AppError } from "../../utils/AppError.js";
 import TaskModel from "./models.js";
+import ProjectModel from "../projects/models.js";
 
 export const getTasks = async (req, res) => {
     const filter = { fk_user: req.user._id };
@@ -56,6 +57,17 @@ export const createATask = async (req, res) => {
         );
     }
 
+    const project = await ProjectModel.findById(fk_project);
+    if (!project) {
+        throw new AppError("Proyecto no encontrado", 404);
+    }
+    if (new Date(dueDate) > new Date(project.dueDate)) {
+        throw new AppError(
+            "La fecha de vencimiento de la tarea no puede ser posterior a la fecha de vencimiento del proyecto",
+            400,
+        );
+    }
+
     const task = await TaskModel.create({
         title,
         description,
@@ -71,15 +83,30 @@ export const createATask = async (req, res) => {
 export const editATask = async (req, res) => {
     const { title, description, status, priority, dueDate } = req.body || {};
 
+    const existingTask = await TaskModel.findOne({
+        _id: req.params.id,
+        fk_user: req.user._id,
+    });
+
+    if (!existingTask) {
+        throw new AppError("Tarea no encontrada o no tienes permiso", 404);
+    }
+
+    if (dueDate) {
+        const project = await ProjectModel.findById(existingTask.fk_project);
+        if (new Date(dueDate) > new Date(project.dueDate)) {
+            throw new AppError(
+                "La fecha de vencimiento de la tarea no puede ser posterior a la fecha de vencimiento del proyecto",
+                400,
+            );
+        }
+    }
+
     const task = await TaskModel.findOneAndUpdate(
         { _id: req.params.id, fk_user: req.user._id },
         { title, description, status, priority, dueDate },
         { returnDocument: "after", runValidators: true },
     );
-
-    if (!task) {
-        throw new AppError("Tarea no encontrada o no tienes permiso", 404);
-    }
 
     return response(res, task, {
         message: "Tarea actualizada exitosamente",
